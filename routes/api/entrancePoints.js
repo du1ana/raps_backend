@@ -89,8 +89,8 @@ router.route("/nearDanger").post((req, res) => {
   RoadSession.findOne({ isEnded: false, username: username })
     .then((data) => {
       console.log({
-        lat: req.body.lat,
-        lng: req.body.lng,
+        coords: {lat: req.body.lat, lng:req.body.lng},
+        hour: new Date().getHours(),
         vehicleDetails: data.vehicleDetails,
         weatherDetails: data.weatherDetails,
       });
