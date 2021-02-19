@@ -29,14 +29,18 @@ connection.once("open", () => {
 const ePointRouter = require("./routes/api/entrancePoints");
 const policeRouter = require('./routes/api/policeSignin');
 const accidentRouter = require('./routes/api/accidentSubmission');
+const eventRouter = require('./routes/api/eventSubmission')
 const eTeamRouter = require('./routes/api/eTeam')
 const driverRouter = require('./routes/api/driverSignin')
+const incidentRouter = require('./routes/api/incidentReporting')
 const vehicleRouter = require('./routes/api/driverVehicle')
 
 app.use('/police',policeRouter);
 app.use('/accident',accidentRouter);
+app.use('/event',eventRouter);
 app.use('/eteam', eTeamRouter);
 app.use('/driver', driverRouter);
+app.use('/incident', incidentRouter);
 app.use('/vehicle', vehicleRouter);
 app.use("/epoints/", ePointRouter);
 

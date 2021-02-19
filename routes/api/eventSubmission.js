@@ -1,5 +1,5 @@
 const router = require('express').Router();
-let Accident = require('../../models/accident.model');
+let Event = require('../../models/event.model');
 let PoliceSession = require('../../models/policeSession.model');
 
 //Submit (post request)
@@ -7,18 +7,11 @@ router.route('/submit').post((req, res) => {
   const { body } = req;
   const {
     datetime,
-    driverAge,
-    driverGender,
-    weather ,
-    vehicleType ,
-    vehicleYOM  ,
-    licenseIssueDate,
+    type ,
     drivingSide ,
     severity ,
-    reason ,
     kmPost  ,
     suburb,
-    operatedSpeed,
     sessionToken
 } = body;
   //Data constraints
@@ -50,28 +43,20 @@ router.route('/submit').post((req, res) => {
             })
         }else{
                 //save to database
-                const  newAccident = new Accident();
-                 newAccident.datetime = datetime;
-                 newAccident.driverAge = driverAge;
-                 newAccident.driverGender = driverGender;
-                 newAccident.weather = weather;
-                 newAccident.vehicleType = vehicleType;
-                 newAccident.vehicleYOM = vehicleYOM;
-                 newAccident.licenseIssueDate = licenseIssueDate;
-                 newAccident.drivingSide = drivingSide;
-                 newAccident.severity = severity;
-                 newAccident.reason = reason;
-                 newAccident.kmPost = kmPost;
-                 newAccident.suburb = suburb;
-                 newAccident.operatedSpeed = operatedSpeed;
-                 newAccident.status = "reported";
-                 newAccident.sessionToken = sessionToken;
-                 
-                 newAccident.save()
+                const  newEvent = new Event();
+                 newEvent.datetime = datetime;
+                 newEvent.type = type;
+                 newEvent.drivingSide = drivingSide;
+                 newEvent.severity = severity;
+                 newEvent.kmPost = kmPost;
+                 newEvent.suburb = suburb;
+                 newEvent.sessionToken = sessionToken;
+                 newEvent.status = "reported";
+                 newEvent.save()
                 .then(() => 
                     res.send({
                     success:true,
-                    message:'Accident submitted successfully.'
+                    message:'Event submitted successfully.'
                 })
                 )
                 .catch(err => res.send({
@@ -87,11 +72,12 @@ router.route('/submit').post((req, res) => {
 
 
 
-//List All Accidents
+
+//List All Events
 router.route('/list').get((req,res) => {
-    Accident.find({   
+    Event.find({   
             //finds without filter
-        }, (err,accidentList) =>{
+        }, (err,eventList) =>{
             if(err){
                 return res.send({
                     success:false,
@@ -99,23 +85,16 @@ router.route('/list').get((req,res) => {
                 })
             }else{
                 let data=[];
-                for(i in accidentList){
+                for(i in eventList){
                    data.push({
-                        'id':accidentList[i]._id,
-                        'datetime':accidentList[i].datetime, 
-                        'driverAge':accidentList[i].driverAge,
-                        'driverGender':accidentList[i].driverGender,
-                        'weather':accidentList[i].weather,
-                        'vehicleType':accidentList[i].vehicleType,
-                        'vehicleYOM':accidentList[i].vehicleYOM,
-                        'licenseIssueDate':accidentList[i].licenseIssueDate,
-                        'drivingSide':accidentList[i].drivingSide,
-                        'severity':accidentList[i].severity,
-                        'reason':accidentList[i].reason,
-                        'kmPost':accidentList[i].kmPost,
-                        'suburb':accidentList[i].suburb,
-                        'operatedSpeed':accidentList[i].operatedSpeed,
-                        'status':accidentList[i].status
+                        'id':eventList[i]._id,
+                        'datetime':eventList[i].datetime, 
+                        'type':eventList[i].type,
+                        'drivingSide':eventList[i].drivingSide,
+                        'severity':eventList[i].severity,
+                        'kmPost':eventList[i].kmPost,
+                        'suburb':eventList[i].suburb,
+                        'status':eventList[i].status
                 })
                 }
 
@@ -128,15 +107,15 @@ router.route('/list').get((req,res) => {
 })
 })
 
-//Deleting an accident
+//Deleting an event
 router.route('/delete').delete((req, res) => {
     const { body } = req;
-    const {id, sessionToken} = body; //id of accident to be deleted, session token of police user 
+    const {id, sessionToken} = body; //id of event to be deleted, session token of police user 
         //Data constraints
     if(!id || id.length!=24){
         return res.send({
             success:false,
-            message:'Error: Accident invalid.'
+            message:'Error: Event invalid.'
         })}
       if(!sessionToken|| sessionToken.length!=24){
           return res.send({
@@ -160,8 +139,8 @@ router.route('/delete').delete((req, res) => {
                   message:'Error:Invalid Session'
               })
           }else{
-              //validating accident deletion
-              Accident.findOneAndDelete({
+              //validating event deletion
+              Event.findOneAndDelete({
                 _id: id
             }, function (err, docs) { 
                 if (err){ 
@@ -173,7 +152,7 @@ router.route('/delete').delete((req, res) => {
                 else{ 
                     return res.send({
                         success:true,
-                        message:'Accident deleted'
+                        message:'Event deleted'
                     })
                 } 
             })
@@ -183,5 +162,6 @@ router.route('/delete').delete((req, res) => {
       });
 
   
+
 
 module.exports = router;
