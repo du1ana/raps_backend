@@ -69,7 +69,12 @@ router.route('/signin').post((req, res) => {
           return res.send({
               success:true,
               message:'Valid sign in',
-              token:doc._id //session id taken from mongodb doc (record)
+              token:doc._id, //session id taken from mongodb doc (record)
+              contactNumber: eTeam.contactNumber,
+              availability: eTeam.availability,
+              lat: eTeam.lat,
+              lng: eTeam.lng,
+              name: eTeam.name,
           });
       });
       
