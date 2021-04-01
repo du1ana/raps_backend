@@ -2,7 +2,7 @@ const router = require("express").Router();
 let Driver = require("../../models/driver.model");
 let DriverSession = require("../../models/driverSession.model");
 
-//List All Driver Accounts
+//List All Driver Accounts (only for testing)
 router.route("/list").get((req, res) => {
   Driver.find(
     {
@@ -30,6 +30,12 @@ router.route("/list").get((req, res) => {
       }
     }
   );
+});
+
+return res.send({
+  success: true,
+  message: "List received",
+  data: data,
 });
 
 /*{
