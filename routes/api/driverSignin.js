@@ -32,12 +32,6 @@ router.route("/list").get((req, res) => {
   );
 });
 
-return res.send({
-  success: true,
-  message: "List received",
-  data: data,
-});
-
 /*{
   username: { type: String, required: true, unique: true },
   name: { type: String, default:'' },
