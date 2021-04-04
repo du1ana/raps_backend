@@ -432,145 +432,7 @@ router.route("/incidents/handled").post((req, res) => {
 });
 
 //Chosing incident for handling.
-router.route("/dispatch").post(async (req, res) => {
-  const { body } = req;
-  const { id, sessionToken } = body; // id of incident, session token of eTeamSession
-  //Data constraints
-  if (!id || id.length != 24) {
-    return res.send({
-      success: false,
-      message: "Error: Incident ID invalid.",
-    });
-  }
-  if (!sessionToken || sessionToken.length != 24) {
-    return res.send({
-      success: false,
-      message: "Error: Session Token invalid.",
-    });
-  }
-  //validating eTeam
-  ETeamSession.find(
-    {
-      _id: sessionToken,
-      isDeleted: false,
-    },
-    (err, sessions) => {
-      if (err) {
-        return res.send({
-          success: false,
-          message: "Error:Server error or Session not found",
-        });
-      }
-      if (sessions.length != 1 || sessions[0].isDeleted) {
-        return res.send({
-          success: false,
-          message: "Error:Invalid Session",
-        });
-      } else {
-        //find incident
-        IncidentReport.find(
-          {
-            _id: id,
-            eTeamUsername: null,
-            status: 0,
-          },
-          async (err, incidentList) => {
-            if (err) {
-              return res.send({
-                success: false,
-                message: "Error:Server error",
-              });
-            } else {
-              //start transaction
-              const transactionSession = await startSession();
-              try {
-                transactionSession.startTransaction();
 
-                let doc = await ETeam.findOneAndUpdate(
-                  { username: sessions[0].username, availability: true },
-                  { $set: { availability: false } },
-                  { transactionSession }
-                );
-
-                if (!doc) {
-                  await transactionSession.abortTransaction();
-                  res.send("ETeam unavailable " + sessions[0].username);
-                  transactionSession.endSession();
-                } else {
-<<<<<<< HEAD
-                  let doc2 = await IncidentReport.findOneAndUpdate(
-                    { _id: id, eTeamUsername: null, status: 0 },
-                    {
-                      $set: { eTeamUsername: sessions[0].username, status: 1 },
-                    },
-                    { transactionSession }
-                  );
-
-                  if (!doc2) {
-                    await transactionSession.abortTransaction();
-                    res.send("Incident unavailable");
-                    transactionSession.endSession();
-                  }
-=======
-                    //start transaction
-                    const transactionSession = await startSession();
-                    try {
-                        transactionSession.startTransaction()
-
-                        let doc = await ETeam.findOneAndUpdate(
-                            { username: sessions[0].username, availability: true }, { $set: { availability: false } }, {transactionSession});
-                        
-                        if(!doc){
-                            await transactionSession.abortTransaction()   
-                            transactionSession.endSession()
-                            return res.send('ETeam unavailable '+sessions[0].username)
-                        }else{
-                            let doc2 = await IncidentReport.findOneAndUpdate(
-                                { _id:id, eTeamUsername:null, status:0 }, { $set: { eTeamUsername: sessions[0].username, status:1 } }, {transactionSession});
-                            
-                            if(!doc2){
-                                await transactionSession.abortTransaction()
-                                transactionSession.endSession()
-                                return res.send('Incident unavailable');
-                            }
-                        }   
-                        await transactionSession.commitTransaction()
-                        transactionSession.endSession()
-                    } catch (err) {
-                        await transactionSession.abortTransaction()
-                        transactionSession.endSession()
-                        console.log(err)
-                        return res.send('Error when execution eteam/dispatch');
-                    }
-                  return res.send({
-                    success: true,
-                    message: "Emergency Team Dispatched."
-                  });
->>>>>>> dulana/master
-                }
-
-                await transactionSession.commitTransaction();
-                transactionSession.endSession();
-                res.send("ETeam dispatch transaction successfull");
-              } catch (err) {
-                await transactionSession.abortTransaction();
-                transactionSession.endSession();
-                console.log(err);
-                res.send("Error when execution eteam/dispatch");
-              }
-
-              return res.send({
-                success: true,
-                message: "List received",
-                data: data,
-              });
-            }
-          }
-        );
-      }
-    }
-  );
-});
 
 //Complete handling an incident.
 router.route("/complete").post(async (req, res) => {
@@ -638,19 +500,6 @@ router.route("/complete").post(async (req, res) => {
                   res.send("ETeam unavailable " + sessions[0].username);
                   transactionSession.endSession();
                 } else {
-<<<<<<< HEAD
-                  let doc2 = await IncidentReport.findOneAndUpdate(
-                    { _id: id, eTeamUsername: sessions[0].username, status: 1 },
-                    { $set: { status: 2 } },
-                    { transactionSession }
-                  );
-
-                  if (!doc2) {
-                    await transactionSession.abortTransaction();
-                    res.send("Incident unavailable");
-                    transactionSession.endSession();
-                  }
-=======
                     //start transaction
                     const transactionSession = await startSession();
                     try {
@@ -684,7 +533,6 @@ router.route("/complete").post(async (req, res) => {
                         console.log(err)
                         return res.send('Error when execution eteam/complete')
                     }
->>>>>>> dulana/master
                 }
 
                 await transactionSession.commitTransaction();
