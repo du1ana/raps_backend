@@ -746,4 +746,57 @@ router.route("/falsealarm").post(async (req, res) => {
   );
 });
 
+//get profile information
+router.route("/profile").get((req, res) => {
+  const { query } = req;
+  const { token } = query;
+  ETeamSession.find(
+    {
+      _id: token,
+      isDeleted: false,
+    },
+    (err, sessions) => {
+      if (err) {
+        return res.send({
+          success: false,
+          message: "Error:Server error or Session not found",
+        });
+      }
+      if (sessions.length != 1 || sessions[0].isDeleted) {
+        return res.send({
+          success: false,
+          message: "Error:Invalid Session",
+        });
+      } else {
+        ETeam.find(
+          {
+            username: sessions[0].username,
+            isDeleted: false,
+          },
+          (err, sessions) => {
+            if (err) {
+              return res.send({
+                success: false,
+                message: "Error:Server error or Session not found",
+              });
+            }
+            if (sessions.length != 1 || sessions[0].isDeleted) {
+              return res.send({
+                success: false,
+                message: "Error:Invalid Session",
+              });
+            } else {
+              return res.send({
+                success: true,
+                message: "Profile found",
+                name: sessions[0].name,
+              });
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
 module.exports = router;
