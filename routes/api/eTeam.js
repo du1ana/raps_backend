@@ -1,9 +1,5 @@
 const router = require("express").Router();
-<<<<<<< HEAD
 const { startSession } = require("mongoose");
-=======
-const { startSession } = require('mongoose');
->>>>>>> dulana/master
 let ETeam = require("../../models/eTeam.model");
 let ETeamSession = require("../../models/eTeamSession.model");
 let Driver = require("../../models/driver.model");
@@ -436,398 +432,174 @@ router.route("/incidents/handled").post((req, res) => {
 });
 
 //Chosing incident for handling.
-<<<<<<< HEAD
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-=======
-router.route('/dispatch').post( async (req, res) => {
-    const { body } = req;
-    const { id, sessionToken} = body; // id of incident, session token of eTeamSession
-        //Data constraints
-        if(!id|| id.length!=24){
-            return res.send({
-                success:false,
-                message:'Error: Incident ID invalid.'
-            })}
-        if(!sessionToken|| sessionToken.length!=24){
-            return res.send({
-              success:false,
-              message:'Error: Session Token invalid.'
-            })}
-      //validating eTeam
-    ETeamSession.find(
-          {   
-        _id:sessionToken, 
-        isDeleted:false
-    }, async (err,sessions) => {
-        if(err){
-            return res.send({
-                success:false,
-                message:'Error:Server error or Session not found'
-            })
+router.route("/dispatch").post(async (req, res) => {
+  const { body } = req;
+  const { id, sessionToken } = body; // id of incident, session token of eTeamSession
+  //Data constraints
+  if (!id || id.length != 24) {
+    return res.send({
+      success: false,
+      message: "Error: Incident ID invalid.",
+    });
+  }
+  if (!sessionToken || sessionToken.length != 24) {
+    return res.send({
+      success: false,
+      message: "Error: Session Token invalid.",
+    });
+  }
+  //validating eTeam
+  ETeamSession.find(
+    {
+      _id: sessionToken,
+      isDeleted: false,
+    },
+    async (err, sessions) => {
+      if (err) {
+        return res.send({
+          success: false,
+          message: "Error:Server error or Session not found",
+        });
+      }
+      if (sessions.length != 1 || sessions[0].isDeleted) {
+        return res.send({
+          success: false,
+          message: "Error:Invalid Session",
+        });
+      } else {
+        //start transaction
+        const transactionSession = await startSession();
+        transactionSession.startTransaction();
+        try {
+          //reads
+          let eTeam = await ETeam.findOne({
+            username: sessions[0].username,
+          }).session(transactionSession);
+
+          if (!eTeam.availability) {
+            throw new Error("ETeam unavailable");
+          }
+
+          let incident = await IncidentReport.findOne({ _id: id }).session(
+            transactionSession
+          );
+
+          if (incident.eTeamUsername || incident.status != 0) {
+            throw new Error("Incident unavailable");
+          }
+
+          //set values
+          eTeam.availability = false;
+          incident.status = 1;
+          incident.eTeamUsername = eTeam.username;
+
+          //save
+          await eTeam.save();
+          await incident.save();
+
+          await transactionSession.commitTransaction();
+        } catch (err) {
+          await transactionSession.abortTransaction();
+          return res.send({
+            success: false,
+            message: err.message,
+          });
         }
-        if(sessions.length!=1 || sessions[0].isDeleted){
-            return res.send({
-                success:false,
-                message:'Error:Invalid Session'
-            })
-        }else{
-            //start transaction
-            const transactionSession = await startSession();
-            transactionSession.startTransaction();
-            try {
-                //reads
-                let eTeam = await ETeam.findOne(
-                    { username: sessions[0].username}).session(transactionSession);
-
-                if(!eTeam.availability){
-                    throw new Error('ETeam unavailable');
-                }
-
-                let incident = await IncidentReport.findOne(
-                    { _id:id}).session(transactionSession);
-
-                if(incident.eTeamUsername || incident.status!=0){
-                    throw new Error('Incident unavailable');
-                }
-
-                //set values
-                eTeam.availability= false;       
-                incident.status= 1;
-                incident.eTeamUsername= eTeam.username;
-
-                //save
-                await eTeam.save();
-                await incident.save();
-
-                await transactionSession.commitTransaction()
-
-            } catch (err) {
-                await transactionSession.abortTransaction()
-                return res.send({
-                    success: false,
-                    message: err.message
-                  });
-            }
-            transactionSession.endSession()
-            return res.send({
-                success: true,
-                message: "Emergency Team Dispatched."
-            });
-                }
-            }) 
-      });
+        transactionSession.endSession();
+        return res.send({
+          success: true,
+          message: "Emergency Team Dispatched.",
+        });
+      }
+    }
+  );
+});
 
 //Complete incident handling.
-router.route('/complete').post( async (req, res) => {
-    const { body } = req;
-    const { id, sessionToken} = body; // id of incident, session token of eTeamSession
-        //Data constraints
-        if(!id|| id.length!=24){
-            return res.send({
-                success:false,
-                message:'Error: Incident ID invalid.'
-            })}
-        if(!sessionToken|| sessionToken.length!=24){
-            return res.send({
-              success:false,
-              message:'Error: Session Token invalid.'
-            })}
-      //validating eTeam
-    ETeamSession.find(
-          {   
-        _id:sessionToken, 
-        isDeleted:false
-    }, async (err,sessions) => {
-        if(err){
-            return res.send({
-                success:false,
-                message:'Error:Server error or Session not found'
-            })
+router.route("/complete").post(async (req, res) => {
+  const { body } = req;
+  const { id, sessionToken } = body; // id of incident, session token of eTeamSession
+  //Data constraints
+  if (!id || id.length != 24) {
+    return res.send({
+      success: false,
+      message: "Error: Incident ID invalid.",
+    });
+  }
+  if (!sessionToken || sessionToken.length != 24) {
+    return res.send({
+      success: false,
+      message: "Error: Session Token invalid.",
+    });
+  }
+  //validating eTeam
+  ETeamSession.find(
+    {
+      _id: sessionToken,
+      isDeleted: false,
+    },
+    async (err, sessions) => {
+      if (err) {
+        return res.send({
+          success: false,
+          message: "Error:Server error or Session not found",
+        });
+      }
+      if (sessions.length != 1 || sessions[0].isDeleted) {
+        return res.send({
+          success: false,
+          message: "Error:Invalid Session",
+        });
+      } else {
+        //start transaction
+        const transactionSession = await startSession();
+        transactionSession.startTransaction();
+        try {
+          //reads
+          let eTeam = await ETeam.findOne({
+            username: sessions[0].username,
+          }).session(transactionSession);
+
+          if (eTeam.availability) {
+            throw new Error("ETeam unavailable");
+          }
+
+          let incident = await IncidentReport.findOne({ _id: id }).session(
+            transactionSession
+          );
+
+          if (
+            incident.eTeamUsername != eTeam.username ||
+            incident.status != 1
+          ) {
+            throw new Error("Incident unavailable");
+          }
+
+          //set values
+          eTeam.availability = true;
+          incident.status = 2;
+
+          //save
+          await eTeam.save();
+          await incident.save();
+
+          await transactionSession.commitTransaction();
+        } catch (err) {
+          await transactionSession.abortTransaction();
+          return res.send({
+            success: false,
+            message: err.message,
+          });
         }
-        if(sessions.length!=1 || sessions[0].isDeleted){
-            return res.send({
-                success:false,
-                message:'Error:Invalid Session'
-            })
-        }else{
-            //start transaction
-            const transactionSession = await startSession();
-            transactionSession.startTransaction();
-            try {
-                //reads
-                let eTeam = await ETeam.findOne(
-                    { username: sessions[0].username}).session(transactionSession);
-
-                if(eTeam.availability){
-                    throw new Error('ETeam unavailable');
-                }
-
-                let incident = await IncidentReport.findOne(
-                    { _id:id}).session(transactionSession);
-
-                if(incident.eTeamUsername!=eTeam.username || incident.status!=1){
-                    throw new Error('Incident unavailable');
-                }
-
-                //set values
-                eTeam.availability= true;       
-                incident.status= 2;
-
-                //save
-                await eTeam.save();
-                await incident.save();
-
-                await transactionSession.commitTransaction()
-
-            } catch (err) {
-                await transactionSession.abortTransaction()
-                return res.send({
-                    success: false,
-                    message: err.message
-                  });
-            }
-            transactionSession.endSession()
-            return res.send({
-                success: true,
-                message: "Incident handling completed."
-            });
-                }
-            }) 
-      });
->>>>>>> dulana/master
-
+        transactionSession.endSession();
+        return res.send({
+          success: true,
+          message: "Incident handling completed.",
+        });
+      }
+    }
+  );
+});
 
 //NOT WORKING. Report the incident as a false alarm. Blocks the driver who reported from further incident reports.
 router.route("/falsealarm").post(async (req, res) => {
