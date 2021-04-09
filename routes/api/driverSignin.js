@@ -318,4 +318,116 @@ router.route("/delete").delete((req, res) => {
   );
 });
 
+//get profile information
+router.route("/profile").get((req, res) => {
+  const { query } = req;
+  const { token } = query;
+  DriverSession.find(
+    {
+      _id: token,
+      isDeleted: false,
+    },
+    (err, sessions) => {
+      if (err) {
+        return res.send({
+          success: false,
+          message: "Error:Server error or Session not found",
+        });
+      }
+      if (sessions.length != 1 || sessions[0].isDeleted) {
+        return res.send({
+          success: false,
+          message: "Error:Invalid Session",
+        });
+      } else {
+        Driver.find(
+          {
+            username: sessions[0].username,
+            isDeleted: false,
+          },
+          (err, sessions) => {
+            if (err) {
+              return res.send({
+                success: false,
+                message: "Error:Server error or Session not found",
+              });
+            }
+            if (sessions.length != 1 || sessions[0].isDeleted) {
+              return res.send({
+                success: false,
+                message: "Error:Invalid Session",
+              });
+            } else {
+              return res.send({
+                success: true,
+                message: "Profile found",
+                name: sessions[0].name,
+                age: sessions[0].age,
+                gender: sessions[0].gender,
+                licenseIssueDate: sessions[0].licenseIssueDate,
+              });
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
+//chceks whether driver has been blocked from making incident reports
+router.route("/isBlocked").get((req, res) => {
+  const { query } = req;
+  const { token } = query;
+  DriverSession.find(
+    {
+      _id: token,
+      isDeleted: false,
+    },
+    (err, sessions) => {
+      if (err) {
+        return res.send({
+          success: false,
+          message: "Error:Server error or Session not found",
+        });
+      }
+      if (sessions.length != 1 || sessions[0].isDeleted) {
+        return res.send({
+          success: false,
+          message: "Error:Invalid Session",
+        });
+      } else {
+        Driver.find(
+          {
+            username: sessions[0].username,
+            isDeleted: false,
+          },
+          (err, sessions) => {
+            if (err) {
+              return res.send({
+                success: false,
+                message: "Error:Server error or Session not found",
+              });
+            }
+            if (sessions.length != 1 || sessions[0].isDeleted) {
+              return res.send({
+                success: false,
+                message: "Error:Invalid Session",
+              });
+            } else {
+              const blocked = sessions[0].isBlocked;
+              return res.send({
+                success: true,
+                message: blocked
+                  ? "Driver is blocked"
+                  : "Driver is not blocked",
+                isBlocked: blocked,
+              });
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
 module.exports = router;
