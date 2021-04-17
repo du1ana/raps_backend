@@ -53,7 +53,7 @@ router.route("/signup").post((req, res) => {
       message: "Error: Username invalid.",
     });
   }
-  if (!name || !username || !age || !gender || !licenseIssueDate || !password) {
+  if (!username || !password) {
     return res.send({
       success: false,
       message: "Error: Fields cannot be empty.",
