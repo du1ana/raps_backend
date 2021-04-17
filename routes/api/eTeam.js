@@ -5,14 +5,39 @@ let ETeamSession = require("../../models/eTeamSession.model");
 let Driver = require("../../models/driver.model");
 let DriverSession = require("../../models/driverSession.model");
 let IncidentReport = require("../../models/incidentReport.model");
-let Accident = require("../../models/accident.model");
-let Event = require("../../models/event.model");
 
-//list eteams
+//List All ETeam Accounts
 router.route("/list").get((req, res) => {
-  ETeam.find()
-    .then((teams) => res.json(teams))
-    .catch((err) => res.status(400).json("SERVER_ERROR"));
+  ETeam.find(
+    {
+      isDeleted: false,
+    },
+    (err, eteamlist) => {
+      if (err) {
+        return res.send({
+          success: false,
+          message: "Error:Server error",
+        });
+      } else {
+        let data = [];
+        for (i in eteamlist) {
+          data.push({
+            username: eteamlist[i].username,
+            name: eteamlist[i].name,
+            contactNumber: eteamlist[i].contactNumber,
+            availability: eteamlist[i].availability,
+            lat: eteamlist[i].lat,
+            lng: eteamlist[i].lng,
+          });
+        }
+        return res.send({
+          success: true,
+          message: "List received",
+          data: data,
+        });
+      }
+    }
+  ).sort({});
 });
 
 //Sign in
@@ -119,6 +144,107 @@ router.route("/verifysession").get((req, res) => {
           message: "Session verified",
           username: sessions[0].username,
         });
+      }
+    }
+  );
+});
+
+//Updating password
+router.route("/changepassword").post((req, res) => {
+  const { body } = req;
+  const { sessionToken, oldpassword, newpassword } = body; //username of account to be updated, session token of an admin should be added
+  //Data constraints
+  if (
+    !oldpassword ||
+    !newpassword ||
+    oldpassword.length < 4 ||
+    newpassword.length < 4
+  ) {
+    return res.send({
+      success: false,
+      message: "Error: Password invalid.",
+    });
+  }
+  if (!sessionToken || sessionToken.length != 24) {
+    return res.send({
+      success: false,
+      message: "Error: Session Token invalid.",
+    });
+  }
+  //validating session
+  ETeamSession.find(
+    {
+      _id: sessionToken,
+      isDeleted: false,
+    },
+    (err, sessions) => {
+      if (err) {
+        return res.send({
+          success: false,
+          message: "Error:Server error or Session not found",
+        });
+      }
+      if (sessions.length != 1 || sessions[0].isDeleted) {
+        return res.send({
+          success: false,
+          message: "Error:Invalid Session",
+        });
+      } else {
+        //validate password
+        ETeam.find(
+          {
+            username: sessions[0].username,
+          },
+          (err, users) => {
+            if (err) {
+              return res.send({
+                success: false,
+                message: "Error:Server error",
+              });
+            }
+            if (users.length != 1) {
+              return res.send({
+                success: false,
+                message: "Error : Invalid username",
+              });
+            }
+            const eteam = users[0];
+            if (!eteam.validPassword(oldpassword)) {
+              return res.send({
+                success: false,
+                message: "Error :Invalid password",
+              });
+            }
+            if (eteam.isDeleted) {
+              return res.send({
+                success: false,
+                message: "Error:Deleted account",
+              });
+            }
+            //update password
+            ETeam.findOneAndUpdate(
+              {
+                username: sessions[0].username,
+                isDeleted: false,
+              },
+              { $set: { password: eteam.generateHash(newpassword) } },
+              null,
+              (err, eteam) => {
+                if (err) {
+                  return res.send({
+                    success: false,
+                    message: "Error: Server error",
+                  });
+                } else {
+                  return res.send({
+                    success: true,
+                    message: "Password updated.",
+                  });
+                }
+              }
+            );
+          }
+        );
       }
     }
   );
@@ -515,431 +641,106 @@ router.route("/dispatch").post(async (req, res) => {
   );
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//falsealarm
+router.route("/falsealarm").post(async (req, res) => {
+  const { body } = req;
+  const { id, sessionToken } = body; // id of incident, session token of eTeamSession
+  //Data constraints
+  if (!id || id.length != 24) {
+    return res.send({
+      success: false,
+      message: "Error: Incident ID invalid.",
+    });
+  }
+  if (!sessionToken || sessionToken.length != 24) {
+    return res.send({
+      success: false,
+      message: "Error: Session Token invalid.",
+    });
+  }
+  //validating eTeam
+  ETeamSession.find(
+    {
+      _id: sessionToken,
+      isDeleted: false,
+    },
+    async (err, sessions) => {
+      if (err) {
+        return res.send({
+          success: false,
+          message: "Error:Server error or Session not found",
+        });
+      }
+      if (sessions.length != 1 || sessions[0].isDeleted) {
+        return res.send({
+          success: false,
+          message: "Error:Invalid Session",
+        });
+      } else {
+        //start transaction
+        const transactionSession = await startSession();
+        transactionSession.startTransaction();
+        try {
+          //reads
+          let eTeam = await ETeam.findOne({
+            username: sessions[0].username,
+          }).session(transactionSession);
+
+          if (eTeam.availability) {
+            throw new Error("ETeam not unavailable");
+          }
+
+          let incident = await IncidentReport.findOne({ _id: id }).session(
+            transactionSession
+          );
+
+          if (
+            !incident ||
+            incident.eTeamUsername != eTeam.username ||
+            incident.status != 1
+          ) {
+            throw new Error("Incident unavailable");
+          }
+
+          let driver = await Driver.findOne({
+            username: incident.driverUsername,
+          }).session(transactionSession);
+
+          if (!driver) {
+            throw new Error("Driver unavailable");
+          }
+
+          //set values
+          eTeam.availability = true;
+          driver.isBlocked = true;
+          await DriverSession.updateMany(
+            { username: driver.username },
+            { $set: { isBlocked: true } },
+            { transactionSession }
+          );
+
+          //save
+          await eTeam.save();
+          await driver.save();
+          await incident.delete();
+
+          await transactionSession.commitTransaction();
+        } catch (err) {
+          await transactionSession.abortTransaction();
+          return res.send({
+            success: false,
+            message: err.message,
+          });
+        }
+        transactionSession.endSession();
+        return res.send({
+          success: true,
+          message: "Incident handling completed.",
+        });
+      }
+    }
+  );
+});
 
 //Complete incident handling.
 router.route("/complete").post(async (req, res) => {
@@ -1022,125 +823,6 @@ router.route("/complete").post(async (req, res) => {
           success: true,
           message: "Incident handling completed.",
         });
-      }
-    }
-  );
-});
-
-//NOT WORKING. Report the incident as a false alarm. Blocks the driver who reported from further incident reports.
-router.route("/falsealarm").post(async (req, res) => {
-  const { body } = req;
-  const { id, sessionToken } = body; // id of incident, session token of eTeamSession
-  //Data constraints
-  if (!id || id.length != 24) {
-    return res.send({
-      success: false,
-      message: "Error: Incident ID invalid.",
-    });
-  }
-  if (!sessionToken || sessionToken.length != 24) {
-    return res.send({
-      success: false,
-      message: "Error: Session Token invalid.",
-    });
-  }
-  //validating eTeam
-  ETeamSession.find(
-    {
-      _id: sessionToken,
-      isDeleted: false,
-    },
-    (err, sessions) => {
-      if (err) {
-        return res.send({
-          success: false,
-          message: "Error:Server error or Session not found",
-        });
-      }
-      if (sessions.length != 1 || sessions[0].isDeleted) {
-        return res.send({
-          success: false,
-          message: "Error:Invalid Session",
-        });
-      } else {
-        //find incident
-        IncidentReport.find(
-          {
-            _id: id,
-            eTeamUsername: sessions[0].username,
-            status: 1,
-          },
-          async (err, incidentList) => {
-            if (err) {
-              return res.send({
-                success: false,
-                message: "Error:Server error",
-              });
-            } else {
-              //start transaction
-              const transactionSession = await startSession();
-              try {
-                transactionSession.startTransaction();
-
-                let doc = await ETeam.findOneAndUpdate(
-                  { username: sessions[0].username, availability: false },
-                  { $set: { availability: true } },
-                  { transactionSession }
-                );
-
-                if (!doc) {
-                  await transactionSession.abortTransaction();
-                  res.send("ETeam unavailable " + sessions[0].username);
-                  transactionSession.endSession();
-                } else {
-                  let doc2 = await IncidentReport.findOneAndDelete(
-                    { _id: id, eTeamUsername: sessions[0].username, status: 1 },
-                    { transactionSession }
-                  );
-
-                  if (!doc2) {
-                    await transactionSession.abortTransaction();
-                    res.send("Incident unavailable");
-                    transactionSession.endSession();
-                  } else {
-                    let doc3 = await Driver.findOneAndUpdate(
-                      { username: incidentList[0].username },
-                      { $set: { isBlocked: true } },
-                      { transactionSession }
-                    );
-
-                    if (!doc3) {
-                      await transactionSession.abortTransaction();
-                      res.send(
-                        "Driver unavailable " + incidentList[0].username
-                      );
-                      transactionSession.endSession();
-                    } else {
-                      await DriverSession.updateMany(
-                        { username: incidentList[0].username },
-                        { $set: { isBlocked: true } },
-                        { transactionSession }
-                      );
-                      await transactionSession.commitTransaction();
-                      transactionSession.endSession();
-                      res.send("ETeam completion transaction successfull");
-                    }
-                  }
-                }
-              } catch (err) {
-                await transactionSession.abortTransaction();
-                transactionSession.endSession();
-                console.log(err);
-                res.send("Error when execution eteam/complete");
-              }
-
-              return res.send({
-                success: true,
-                message: "FalseAlarm reported",
-              });
-            }
-          }
-        );
       }
     }
   );

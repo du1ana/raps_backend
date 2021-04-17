@@ -1,8 +1,9 @@
 const router = require("express").Router();
 let IncidentReport = require("../../models/incidentReport.model");
 let DriverSession = require("../../models/driverSession.model");
+let PoliceSession = require("../../models/policeSession.model");
 
-//Submit (post request) (duplicate submits should be controlled)
+//Submit (post request)
 router.route("/submit").post((req, res) => {
   const { body } = req;
   const {
@@ -25,6 +26,7 @@ router.route("/submit").post((req, res) => {
     {
       _id: sessionToken,
       isDeleted: false,
+      isBlocked: false
     },
     (err, sessions) => {
       if (err) {
@@ -71,11 +73,11 @@ router.route("/submit").post((req, res) => {
   );
 });
 
-//List All Incidents (for testing only)
+//List Handled Incidents
 router.route("/list").get((req, res) => {
   IncidentReport.find(
     {
-      //finds without filter
+      status:2
     },
     (err, incidentList) => {
       if (err) {
@@ -216,6 +218,69 @@ router.route('/delete').delete((req, res) => {
             IncidentReport.findOneAndDelete({
               _id: id, 
               driverUsername:sessions[0].username
+          }, function (err, docs) { 
+              if (err){ 
+                  return res.send({
+                      success:false,
+                      message:'Error:Server error or Incident invalid',
+                      error:err
+                  })
+              }
+              else if(!docs){ 
+                return res.send({
+                    success:false,
+                    message:'Incident not found',
+                    deletedRecord:docs
+                })
+            }  
+              else{ 
+                  return res.send({
+                      success:true,
+                      message:'Incident deleted',
+                      deletedRecord:docs
+                  })
+              } 
+          })
+            
+                }
+            }) 
+    });
+
+//Deleting an Incident (for police)
+router.route('/police/delete').delete((req, res) => {
+  const { body } = req;
+  const {id, sessionToken} = body; //id of incident to be deleted, session token of police session 
+      //Data constraints
+  if(!id || id.length!=24){
+      return res.send({
+          success:false,
+          message:'Error: Incident invalid.'
+      })}
+    if(!sessionToken|| sessionToken.length!=24){
+        return res.send({
+            success:false,
+            message:'Error: Session Token invalid.'
+        })}
+    //validating session
+    PoliceSession.find({   
+        _id:sessionToken, 
+        isDeleted:false
+    }, (err,sessions) =>{
+        if(err){
+            return res.send({
+                success:false,
+                message:'Error:Server error or Session not found'
+            })
+        }
+        if(sessions.length!=1 || sessions[0].isDeleted){
+            return res.send({
+                success:false,
+                message:'Error:Invalid Session'
+            })
+        }else{
+            //validating event deletion
+            IncidentReport.findOneAndDelete({
+              _id: id
           }, function (err, docs) { 
               if (err){ 
                   return res.send({
