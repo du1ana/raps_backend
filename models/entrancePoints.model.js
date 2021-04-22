@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 const entrancePointSchema = new Schema(
   {
     type: { type: String },
+    dptype: { type: String },
     entrance: { type: String },
     lat: { type: String },
     lng: { type: String },
