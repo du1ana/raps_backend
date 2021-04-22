@@ -872,6 +872,7 @@ router.route("/profile").get((req, res) => {
                 success: true,
                 message: "Profile found",
                 name: sessions[0].name,
+                contactNumber: sessions[0].contactNumber,
               });
             }
           }
